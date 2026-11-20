@@ -2,8 +2,8 @@ import { createHttpRouter } from '@crawlee/http';
 
 export const router = createHttpRouter();
 
-router.addDefaultHandler(async ({ request, body, log, pushData }) => {
-    const { page, searchQuery } = request.userData;
+router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
+    const { page = 1, searchQuery, maxPages = 1 } = request.userData;
 
     log.info(`Procesando página ${page} → term: "${searchQuery}"`);
 
@@ -27,6 +27,12 @@ router.addDefaultHandler(async ({ request, body, log, pushData }) => {
 
     // Condición: 1 resultado (product_series, ej: 2.txt) o varios resultados (product_keyword.list, ej: 1.txt)
     if (series && series.F_SeriesId) {
+        // Si por alguna razón llegó una página > 1 con la misma serie única, evitar duplicar
+        if (page > 1) {
+            log.info(`Página ${page} ignorada → resultado único ya guardado.`);
+            return;
+        }
+
         // 1 resultado
         await pushData({
             type: 'product',
@@ -93,6 +99,24 @@ router.addDefaultHandler(async ({ request, body, log, pushData }) => {
         }
 
         log.info(`Página ${page} procesada → ${keywordList.length} resultados (lista por palabra clave)`);
+
+        // Paginación dinámica: encolar siguiente página si existe y no supera maxPages
+        const maxPageApi = data.pagedata?.maxPage || 1;
+        if (page < maxPages && page < maxPageApi) {
+            const nextPage = page + 1;
+            const nextUrl = new URL(request.url);
+            nextUrl.searchParams.set('page', String(nextPage));
+            await crawler.addRequests([
+                {
+                    url: nextUrl.toString(),
+                    userData: {
+                        page: nextPage,
+                        searchQuery,
+                        maxPages,
+                    },
+                },
+            ]);
+        }
     } else {
         log.info(`Página ${page} procesada → 0 resultados`);
     }

@@ -33,22 +33,21 @@ const crawler = new HttpCrawler({
     requestHandler: router,
 });
 
-const startUrls = [];
+const searchUrl = new URL('https://data-hive.360che.com/search/v1/complex-v4');
+searchUrl.searchParams.set('local_address', '');
+searchUrl.searchParams.set('term', searchQuery);
+searchUrl.searchParams.set('page', '1');
 
-for (let page = 1; page <= maxPages; page++) {
-    const url = new URL('https://data-hive.360che.com/search/v1/complex-v4');
-    url.searchParams.set('local_address', '');
-    url.searchParams.set('term', searchQuery);
-    url.searchParams.set('page', String(page));
-
-    startUrls.push({
-        url: url.toString(),
+const startUrls = [
+    {
+        url: searchUrl.toString(),
         userData: {
-            page,
+            page: 1,
             searchQuery,
+            maxPages,
         },
-    });
-}
+    },
+];
 
 await crawler.run(startUrls);
 
