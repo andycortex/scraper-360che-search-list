@@ -4,22 +4,26 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "startUrls": {
-            "title": "Start URLs",
-            "type": "array",
-            "description": "URLs to start with.",
-            "editor": "requestListSources",
-            "prefill": [
-                {
-                    "url": "https://crawlee.dev"
-                }
-            ]
+        "searchQuery": {
+            "title": "Término de búsqueda",
+            "type": "string",
+            "description": "Lo que se busca (ej: 06, 海豹, 特斯拉...)",
+            "default": "06",
+            "editor": "textfield"
+        },
+        "maxPages": {
+            "title": "Máximo de páginas",
+            "type": "integer",
+            "description": "Cuántas páginas quieres scrapear",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 50
         },
         "maxRequestsPerCrawl": {
-            "title": "Max Requests per Crawl",
+            "title": "Máximo de requests",
+            "description": "Máximo de requests",
             "type": "integer",
-            "description": "Maximum number of requests that can be made by this crawler.",
-            "default": 100
+            "default": 50
         }
     }
 }
