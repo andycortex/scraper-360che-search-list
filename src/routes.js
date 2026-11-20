@@ -33,7 +33,7 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
             return;
         }
 
-        // 1 resultado
+        // 1 resultado (serie única)
         await pushData({
             type: 'product',
             searchQuery,
@@ -41,10 +41,13 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
             productId: series.proId ? String(series.proId) : null,
             title: series.F_ShortName || null,
             brandId: series.F_BrandId ? String(series.F_BrandId) : null,
+            brandName: series.F_BrandName || null,
             seriesId: series.F_SeriesId ? String(series.F_SeriesId) : null,
-            subId: series.F_SubCategoryId ? String(series.F_SubCategoryId) : null,
+            categoryId: series.F_CateId ? String(series.F_CateId) : null,
+            subCategoryId: series.F_SubCategoryId ? String(series.F_SubCategoryId) : null,
+            subCategoryName: series.F_SubCategoryName || null,
             priceMin: series.price?.minPrice || series.showPrice?.minPrice || null,
-            maxPrice: series.price?.maxPrice || series.showPrice?.maxPrice || null,
+            priceMax: series.price?.maxPrice || series.showPrice?.maxPrice || null,
             priceUnit: series.productData?.[0]?.F_PriceUnit || '万元',
             showPrice: series.showPrice?.minPrice || series.price?.minPrice || null,
             showPriceMsg: series.showPrice?.message || series.productData?.[0]?.showMsg || null,
@@ -53,7 +56,9 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
                 series.F_IsStopMake === '1' || series.F_IsStopMake === 1
                     ? 'stopSelling'
                     : 'onSale',
+            isStopMake: series.F_IsStopMake === '1' || series.F_IsStopMake === 1,
             isEv: series.isEv === '1' || series.isEv === 1,
+            haveVideo: series.haveVideo === 1,
             weekClickCount: series.productData?.[0]?.F_WeekClickCount
                 ? String(series.productData[0].F_WeekClickCount)
                 : null,
@@ -66,8 +71,10 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
 
         log.info(`Página ${page} procesada → 1 resultado (serie única: "${series.F_ShortName}")`);
     } else if (Array.isArray(keywordList) && keywordList.length > 0) {
-        // Varios resultados
+        // Varios resultados (lista por palabra clave)
         for (const item of keywordList) {
+            const brandFromTitle = item.title ? item.title.trim().split(/\s+/)[0] : null;
+
             await pushData({
                 type: 'product',
                 searchQuery,
@@ -75,8 +82,11 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
                 productId: item.product_id ? String(item.product_id) : null,
                 title: item.title || null,
                 brandId: item.brand_id ? String(item.brand_id) : null,
+                brandName: item.brand_name || brandFromTitle || null,
                 seriesId: item.seriesId ? String(item.seriesId) : null,
-                subId: item.subId ? String(item.subId) : null,
+                categoryId: item.categoryId || item.cate_id || null,
+                subCategoryId: item.subId ? String(item.subId) : null,
+                subCategoryName: item.subCategoryName || null,
                 priceMin: item.price_min || null,
                 priceMax: item.price_max || null,
                 priceUnit: item.price_unit || '万元',
@@ -88,7 +98,13 @@ router.addDefaultHandler(async ({ request, body, log, pushData, crawler }) => {
                     (item.F_IsStopMake === '1' || item.F_IsStopMake === 1
                         ? 'stopSelling'
                         : 'onSale'),
+                isStopMake:
+                    item.sale_state === 'stopSelling' ||
+                    item.sale_state === 'stopMake' ||
+                    item.F_IsStopMake === '1' ||
+                    item.F_IsStopMake === 1,
                 isEv: item.isEv === '1' || item.isEv === 1,
+                haveVideo: false,
                 weekClickCount: item.F_WeekClickCount ? String(item.F_WeekClickCount) : null,
                 image: item.image || null,
                 url: item.pc_url || item.h5_url || item.app_url || null,
